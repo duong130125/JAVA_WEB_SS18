@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<!-- admin/layout.html -->
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100vh;
+      width: 250px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px 0;
+      z-index: 1000;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+    }
+
+    .sidebar .brand {
+      text-align: center;
+      padding: 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      margin-bottom: 20px;
+    }
+
+    .sidebar .nav-link {
+      color: rgba(255,255,255,0.8);
+      padding: 15px 25px;
+      display: flex;
+      align-items: center;
+      text-decoration: none;
+      transition: all 0.3s ease;
+    }
+
+    .sidebar .nav-link:hover,
+    .sidebar .nav-link.active {
+      background: rgba(255,255,255,0.1);
+      color: white;
+      border-right: 4px solid #ffc107;
+    }
+
+    .sidebar .nav-link i {
+      margin-right: 10px;
+      width: 20px;
+    }
+
+    .main-content {
+      margin-left: 250px;
+      min-height: 100vh;
+      background: #f8f9fa;
+    }
+
+    .header {
+      background: white;
+      padding: 20px 30px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      margin-bottom: 30px;
+    }
+
+    .stats-card {
+      background: white;
+      border-radius: 10px;
+      padding: 25px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      border-left: 4px solid;
+      transition: transform 0.3s ease;
+    }
+
+    .stats-card:hover {
+      transform: translateY(-5px);
+    }
+
+    .stats-card.users { border-left-color: #007bff; }
+    .stats-card.products { border-left-color: #28a745; }
+    .stats-card.orders { border-left-color: #ffc107; }
+    .stats-card.revenue { border-left-color: #dc3545; }
+
+    .stats-number {
+      font-size: 2.5rem;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    .stats-label {
+      color: #6c757d;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .content-section {
+      background: white;
+      border-radius: 10px;
+      padding: 25px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .table-container {
+      overflow-x: auto;
+    }
+
+    .badge {
+      font-size: 0.75rem;
+    }
+
+    @media (max-width: 768px) {
+      .sidebar {
+        width: 200px;
+      }
+      .main-content {
+        margin-left: 200px;
+      }
+    }
+  </style>
+</head>
+<body>
+<!-- Sidebar -->
+<div class="sidebar">
+  <div class="brand">
+    <h4><i class="fas fa-crown"></i> Admin Panel</h4>
+  </div>
+  <nav>
+    <a href="/admin" class="nav-link" th:classappend="${currentPage == 'dashboard'} ? 'active' : ''">
+      <i class="fas fa-chart-line"></i>
+      Dashboard
+    </a>
+    <a href="/admin/users" class="nav-link" th:classappend="${currentPage == 'users'} ? 'active' : ''">
+      <i class="fas fa-users"></i>
+      Quản lý Users
+    </a>
+    <a href="/admin/products" class="nav-link" th:classappend="${currentPage == 'products'} ? 'active' : ''">
+      <i class="fas fa-box"></i>
+      Quản lý Products
+    </a>
+    <a href="/admin/orders" class="nav-link" th:classappend="${currentPage == 'orders'} ? 'active' : ''">
+      <i class="fas fa-shopping-cart"></i>
+      Quản lý Orders
+    </a>
+    <div class="mt-auto" style="position: absolute; bottom: 20px; left: 0; right: 0;">
+      <a href="/logout" class="nav-link">
+        <i class="fas fa-sign-out-alt"></i>
+        Đăng xuất
+      </a>
+    </div>
+  </nav>
+</div>
+
+<!-- Main Content -->
+<div class="main-content">
+  <!-- Header -->
+  <div class="header">
+    <div class="d-flex justify-content-between align-items-center">
+      <h2 class="mb-0">
+        <span th:if="${currentPage == 'dashboard'}">Dashboard</span>
+        <span th:if="${currentPage == 'users'}">Quản lý Users</span>
+        <span th:if="${currentPage == 'products'}">Quản lý Products</span>
+        <span th:if="${currentPage == 'orders'}">Quản lý Orders</span>
+      </h2>
+      <div class="text-muted">
+        <i class="fas fa-calendar"></i>
+        <span th:text="${#temporals.format(currentTime, 'dd/MM/yyyy HH:mm')}"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Content Area -->
+  <div class="container-fluid">
+    <!-- Dashboard Content -->
+    <div th:if="${currentPage == 'dashboard' or currentPage == null}">
+      <!-- Statistics Cards -->
+      <div class="row">
+        <div class="col-xl-3 col-md-6">
+          <div class="stats-card users">
+            <div class="d-flex justify-content-between">
+              <div>
+                <div class="stats-number text-primary" th:text="${stats.totalUsers}">0</div>
+                <div class="stats-label">Tổng Users</div>
+              </div>
+              <div class="align-self-center">
+                <i class="fas fa-users fa-2x text-primary"></i>
+              </div>
+            </div>
+            <div class="mt-3">
+              <small class="text-success">
+                <i class="fas fa-user-check"></i>
+                <span th:text="${stats.activeUsers}">0</span> đang hoạt động
+              </small>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+          <div class="stats-card products">
+            <div class="d-flex justify-content-between">
+              <div>
+                <div class="stats-number text-success" th:text="${stats.totalProducts}">0</div>
+                <div class="stats-label">Tổng Products</div>
+              </div>
+              <div class="align-self-center">
+                <i class="fas fa-box fa-2x text-success"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+          <div class="stats-card orders">
+            <div class="d-flex justify-content-between">
+              <div>
+                <div class="stats-number text-warning" th:text="${stats.totalOrders}">0</div>
+                <div class="stats-label">Tổng Orders</div>
+              </div>
+              <div class="align-self-center">
+                <i class="fas fa-shopping-cart fa-2x text-warning"></i>
+              </div>
+            </div>
+            <div class="mt-3">
+              <small class="text-warning">
+                <i class="fas fa-clock"></i>
+                <span th:text="${stats.pendingOrders}">0</span> đang chờ
+              </small>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+          <div class="stats-card revenue">
+            <div class="d-flex justify-content-between">
+              <div>
+                <div class="stats-number text-danger">
+                  $<span th:text="${#numbers.formatDecimal(stats.totalRevenue, 0, 2)}">0.00</span>
+                </div>
+                <div class="stats-label">Tổng Doanh Thu</div>
+              </div>
+              <div class="align-self-center">
+                <i class="fas fa-dollar-sign fa-2x text-danger"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Revenue Charts -->
+      <div class="row mt-4">
+        <div class="col-md-6">
+          <div class="content-section">
+            <h5 class="mb-3"><i class="fas fa-chart-bar"></i> Doanh Thu Tháng Này</h5>
+            <div class="text-center">
+              <h3 class="text-success">
+                $<span th:text="${#numbers.formatDecimal(stats.monthlyRevenue, 0, 2)}">0.00</span>
+              </h3>
+              <p class="text-muted">Tháng hiện tại</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="content-section">
+            <h5 class="mb-3"><i class="fas fa-chart-line"></i> Doanh Thu Năm Này</h5>
+            <div class="text-center">
+              <h3 class="text-info">
+                $<span th:text="${#numbers.formatDecimal(stats.yearlyRevenue, 0, 2)}">0.00</span>
+              </h3>
+              <p class="text-muted">Năm hiện tại</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="row mt-4">
+        <div class="col-12">
+          <div class="content-section">
+            <h5 class="mb-3"><i class="fas fa-bolt"></i> Thao Tác Nhanh</h5>
+            <div class="row">
+              <div class="col-md-3">
+                <a href="/admin/users" class="btn btn-outline-primary w-100 mb-2">
+                  <i class="fas fa-user-plus"></i> Thêm User
+                </a>
+              </div>
+              <div class="col-md-3">
+                <a href="/admin/products" class="btn btn-outline-success w-100 mb-2">
+                  <i class="fas fa-plus"></i> Thêm Product
+                </a>
+              </div>
+              <div class="col-md-3">
+                <a href="/admin/orders" class="btn btn-outline-warning w-100 mb-2">
+                  <i class="fas fa-eye"></i> Xem Orders
+                </a>
+              </div>
+              <div class="col-md-3">
+                <button class="btn btn-outline-info w-100 mb-2" onclick="refreshStats()">
+                  <i class="fas fa-sync"></i> Refresh Stats
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Users Management -->
+    <div th:if="${currentPage == 'users'}" class="content-section">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5><i class="fas fa-users"></i> Danh Sách Users</h5>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
+          <i class="fas fa-plus"></i> Thêm User
+        </button>
+      </div>
+      <div class="table-container">
+        <table class="table table-striped table-hover">
+          <thead class="table-dark">
+          <tr>
+            <th>ID</th>
+            <th>Username</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Trạng Thái</th>
+            <th>Ngày Tạo</th>
+            <th>Thao Tác</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr th:each="user : ${users}">
+            <td th:text="${user.id}"></td>
+            <td th:text="${user.username}"></td>
+            <td th:text="${user.email}"></td>
+            <td>
+                                    <span class="badge" th:classappend="${user.role == 'ADMIN'} ? 'bg-danger' : 'bg-primary'"
+                                          th:text="${user.role}"></span>
+            </td>
+            <td>
+                                    <span class="badge" th:classappend="${user.isActive} ? 'bg-success' : 'bg-secondary'"
+                                          th:text="${user.isActive} ? 'Hoạt động' : 'Không hoạt động'"></span>
+            </td>
+            <td th:text="${#temporals.format(user.createdAt, 'dd/MM/yyyy')}"></td>
+            <td>
+              <button class="btn btn-sm btn-outline-primary me-1">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-danger">
+                <i class="fas fa-trash"></i>
+              </button>
+            </td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Products Management -->
+    <div th:if="${currentPage == 'products'}" class="content-section">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5><i class="fas fa-box"></i> Danh Sách Products</h5>
+        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addProductModal">
+          <i class="fas fa-plus"></i> Thêm Product
+        </button>
+      </div>
+      <div class="table-container">
+        <table class="table table-striped table-hover">
+          <thead class="table-dark">
+          <tr>
+            <th>ID</th>
+            <th>Tên Product</th>
+            <th>Mô Tả</th>
+            <th>Giá</th>
+            <th>Số Lượng</th>
+            <th>Trạng Thái</th>
+            <th>Ngày Tạo</th>
+            <th>Thao Tác</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr th:each="product : ${products}">
+            <td th:text="${product.id}"></td>
+            <td th:text="${product.name}"></td>
+            <td th:text="${#strings.abbreviate(product.description, 50)}"></td>
+            <td>$<span th:text="${#numbers.formatDecimal(product.price, 0, 2)}"></span></td>
+            <td>
+                                    <span class="badge" th:classappend="${product.stockQuantity > 0} ? 'bg-success' : 'bg-danger'"
+                                          th:text="${product.stockQuantity}"></span>
+            </td>
+            <td>
+                                    <span class="badge" th:classappend="${product.isActive} ? 'bg-success' : 'bg-secondary'"
+                                          th:text="${product.isActive} ? 'Hoạt động' : 'Không hoạt động'"></span>
+            </td>
+            <td th:text="${#temporals.format(product.createdAt, 'dd/MM/yyyy')}"></td>
+            <td>
+              <button class="btn btn-sm btn-outline-primary me-1">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-danger">
+                <i class="fas fa-trash"></i>
+              </button>
+            </td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Orders Management -->
+    <div th:if="${currentPage == 'orders'}" class="content-section">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5><i class="fas fa-shopping-cart"></i> Danh Sách Orders</h5>
+        <div class="btn-group">
+          <button class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+            <i class="fas fa-filter"></i> Lọc theo trạng thái
+          </button>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="#">Tất cả</a></li>
+            <li><a class="dropdown-item" href="#">Pending</a></li>
+            <li><a class="dropdown-item" href="#">Confirmed</a></li>
+            <li><a class="dropdown-item" href="#">Delivered</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="table-container">
+        <table class="table table-striped table-hover">
+          <thead class="table-dark">
+          <tr>
+            <th>ID</th>
+            <th>User</th>
+            <th>Tổng Tiền</th>
+            <th>Trạng Thái</th>
+            <th>Ngày Đặt</th>
+            <th>Thao Tác</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr th:each="order : ${orders}">
+            <td th:text="${order.id}"></td>
+            <td th:text="${order.user.username}"></td>
+            <td>$<span th:text="${#numbers.formatDecimal(order.totalAmount, 0, 2)}"></span></td>
+            <td>
+                                    <span class="badge"
+                                          th:classappend="${order.orderStatus == 'PENDING'} ? 'bg-warning' :
+                                                         (${order.orderStatus == 'CONFIRMED'} ? 'bg-info' :
+                                                         (${order.orderStatus == 'DELIVERED'} ? 'bg-success' : 'bg-danger'))"
+                                          th:text="${order.orderStatus}"></span>
+            </td>
+            <td th:text="${#temporals.format(order.createdAt, 'dd/MM/yyyy HH:mm')}"></td>
+            <td>
+              <div class="btn-group">
+                <button class="btn btn-sm btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown">
+                  Cập nhật
+                </button>
+                <ul class="dropdown-menu">
+                  <li><a class="dropdown-item" href="#">Confirmed</a></li>
+                  <li><a class="dropdown-item" href="#">Shipped</a></li>
+                  <li><a class="dropdown-item" href="#">Delivered</a></li>
+                  <li><hr class="dropdown-divider"></li>
+                  <li><a class="dropdown-item text-danger" href="#">Cancel</a></li>
+                </ul>
+              </div>
+            </td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add User Modal -->
+<div class="modal fade" id="addUserModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Thêm User Mới</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="post" action="/admin/users/add">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Username</label>
+            <input type="text" class="form-control" name="username" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Email</label>
+            <input type="email" class="form-control" name="email" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Password</label>
+            <input type="password" class="form-control" name="password" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Role</label>
+            <select class="form-select" name="role">
+              <option value="USER">USER</option>
+              <option value="ADMIN">ADMIN</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+          <button type="submit" class="btn btn-primary">Thêm User</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Add Product Modal -->
+<div class="modal fade" id="addProductModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Thêm Product Mới</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="post" action="/admin/products/add">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Tên Product</label>
+            <input type="text" class="form-control" name="name" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Mô Tả</label>
+            <textarea class="form-control" name="description" rows="3"></textarea>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Giá</label>
+            <input type="number" class="form-control" name="price" step="0.01" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Số Lượng</label>
+            <input type="number" class="form-control" name="stockQuantity" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+          <button type="submit" class="btn btn-success">Thêm Product</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+<script>
+  // Refresh statistics
+  function refreshStats() {
+    location.reload();
+  }
+
+  // Auto refresh every 5 minutes
+  setInterval(function() {
+    if (window.location.pathname === '/admin' || window.location.pathname === '/admin/') {
+      refreshStats();
+    }
+  }, 300000);
+
+  // Revenue chart functionality
+  function loadRevenueData(year, month = null) {
+    const url = month ?
+            `/admin/revenue?year=${year}&month=${month}` :
+            `/admin/revenue?year=${year}`;
+
+    fetch(url)
+            .then(response => response.json())
+            .then(data => {
+              console.log('Revenue data:', data);
+            })
+            .catch(error => console.error('Error:', error));
+  }
+
+  // Initialize
+  document.addEventListener('DOMContentLoaded', function() {
+    // Load current year revenue data
+    const currentYear = new Date().getFullYear();
+    loadRevenueData(currentYear);
+  });
+</script>
+</body>
+</html>
