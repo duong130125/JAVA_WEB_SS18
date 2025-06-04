@@ -34,6 +34,12 @@ public class AdminController {
         return currentUser != null && "ADMIN".equals(currentUser.getRole());
     }
 
+    // Phương thức helper để setup model chung
+    private void setupCommonModel(Model model, String currentPage) {
+        model.addAttribute("currentPage", currentPage);
+        model.addAttribute("currentTime", LocalDateTime.now());
+    }
+
     @GetMapping("")
     public String adminDashboard(HttpSession session, Model model) {
         if (!isAdmin(session)) {
@@ -42,10 +48,9 @@ public class AdminController {
 
         DashboardStats stats = adminService.getDashboardStatistics();
         model.addAttribute("stats", stats);
-        model.addAttribute("currentPage", "dashboard");
-        model.addAttribute("currentTime", LocalDateTime.now());
+        setupCommonModel(model, "dashboard");
 
-        return "admin/layout";
+        return "admin/dashboard"; // Trả về template riêng cho dashboard
     }
 
     @GetMapping("/dashboard")
@@ -56,9 +61,9 @@ public class AdminController {
 
         DashboardStats stats = adminService.getDashboardStatistics();
         model.addAttribute("stats", stats);
-        model.addAttribute("currentPage", "dashboard");
+        setupCommonModel(model, "dashboard");
 
-        return "admin/dashboard";
+        return "admin/dashboard"; // Trả về template riêng cho dashboard
     }
 
     @GetMapping("/users")
@@ -68,9 +73,9 @@ public class AdminController {
         }
 
         model.addAttribute("users", adminService.getAllUsers());
-        model.addAttribute("currentPage", "users");
+        setupCommonModel(model, "users");
 
-        return "admin/layout";
+        return "admin/users"; // Trả về template riêng cho users
     }
 
     @PostMapping("/users/add")
@@ -155,9 +160,9 @@ public class AdminController {
         }
 
         model.addAttribute("products", adminService.getAllProducts());
-        model.addAttribute("currentPage", "products");
+        setupCommonModel(model, "products");
 
-        return "admin/layout";
+        return "admin/products"; // Trả về template riêng cho products
     }
 
     @PostMapping("/products/add")
@@ -232,9 +237,9 @@ public class AdminController {
 //        }
 //
 //        model.addAttribute("orders", adminService.getAllOrders());
-//        model.addAttribute("currentPage", "orders");
+//        setupCommonModel(model, "orders");
 //
-//        return "admin/layout";
+//        return "admin/orders"; // Trả về template riêng cho orders
 //    }
 //
 //    @PostMapping("/orders/updateStatus/{id}")
@@ -270,5 +275,35 @@ public class AdminController {
         } else {
             return adminService.getYearlyRevenue(year);
         }
+    }
+
+    // API endpoint để load nội dung động qua AJAX (nếu cần)
+    @GetMapping("/api/load-content/{page}")
+    @ResponseBody
+    public String loadContent(@PathVariable String page, HttpSession session, Model model) {
+        if (!isAdmin(session)) {
+            return "error";
+        }
+
+        switch (page) {
+            case "dashboard":
+                DashboardStats stats = adminService.getDashboardStatistics();
+                model.addAttribute("stats", stats);
+                break;
+            case "users":
+                model.addAttribute("users", adminService.getAllUsers());
+                break;
+            case "products":
+                model.addAttribute("products", adminService.getAllProducts());
+                break;
+            case "orders":
+                model.addAttribute("orders", adminService.getAllOrders());
+                break;
+            default:
+                return "error";
+        }
+
+        setupCommonModel(model, page);
+        return "success";
     }
 }
